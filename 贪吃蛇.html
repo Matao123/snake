@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>贪吃蛇网页版</title>
+	<style type="text/css">
+    *{margin: 0;padding: 0;}
+    .menu{
+      width: 260px;
+      height: 200px;
+      border: 1px solid pink;
+      position: absolute;
+      top: 55px;
+      left: 80px;
+      padding: 15px 15px 15px 20px;
+      font-family: Arial;
+      font-size: 20px;
+      background-color: #e3e3e3;
+      line-height: 40px;
+    }
+		#game{
+			width: 500px;
+			height: 500px;
+			margin: 50px auto;
+			position: relative;
+      background-color: pink;
+		}
+		.snakeBody{
+			width: 18px;
+			height: 18px;
+			background-color: #0f0;
+			border: 1px solid #fff;
+			border-radius: 30%;
+			position: absolute;
+		}
+    #game span{
+      width: 18px;
+      height: 18px;
+      display: block;
+      border: 1px solid #fff;
+      background-color: blue;
+      border-radius: 50%;
+      position: absolute;
+    }
+    .mark{
+      font-weight: 550;
+      font-size: 28px;
+    }
+    #mark{
+      position:relative;
+      display:inline-block;
+      transform:scale(1);
+      opacity: 1;
+      transition:all .3s;
+      margin-right: 10px;
+    }
+    #mark.fade{
+      opacity: 0;
+      transform:scale(1.3)
+    }
+    .over{
+      position: absolute;
+      top: 240px;
+      left: 44%;
+      font-family: Arial;
+      font-size: 36px;
+      color: red;
+      display: none;
+    }
+    .goOn{
+      position: absolute;
+      top: 240px;
+      left: 44%;
+      font-family: Arial;
+      font-size: 36px;
+      color: #00ffb0;
+      display: none;
+      cursor: pointer;
+    }
+    button{
+      padding: 8px 14px;
+      font-size: 16px;
+      background-color: pink;
+      border-radius: 10%;
+      margin-bottom: 10px;
+    }
+    #pause{
+      margin-left: 20px;
+    }
+    #gameMode{
+      padding: 3px;
+      font-size: 16px;
+      background-color: pink;
+      margin-left: 20px;
+    }
+    .gameTime{
+      font-size: 20px;
+    }
+    .gameTime span{
+      margin-left: 30px;
+    }
+    img{
+      width: 500px;
+      height: 500px;
+    }
+    #player{
+      padding: 3px;
+      width: 120px;
+      height: 16px;
+      margin-left: 10px;
+    }
+	</style>
+</head>
+<body>
+  <div class="menu">
+    <p>玩家姓名:<input type="text" id="player"></p>
+    <button id="btn">开始游戏</button>
+    <button id="pause">暂停</button>
+    <P class="mark"><span id="color">得分：</span><span id="mark">00</span>分</P>
+    <p>游戏难度：
+      <select id="gameMode">
+        <option value="200">新手</option>
+        <option value="140">普通</option>
+        <option value="80">大师</option>
+        <option value="40">变态</option>
+      </select>
+    </p>
+    <p class="gameTime">游戏时间：<span id="gameTime">0</span>秒</p>
+    <audio src="7895.mp3" id="startMusic"></audio>
+    <audio src="7896.mp3" id="dealMusic"></audio>
+    <audio src="8936.mp3" id="eatMusic"></audio>
+  </div>
+  <div id="game" style="border:none">
+    <img src="img/fengmian.jpg">
+  </div>
+  <h2 class="over">Game over</h2>
+  <a class="goOn">继续游戏</a>
+	<script>
+		var game = document.getElementById("game")
+    var mark = document.getElementById("mark")
+    var btn = document.getElementById("btn")
+    var over = document.getElementsByClassName("over")[0]
+    var goOn = document.getElementsByClassName("goOn")[0]
+    var player = document.getElementById("player");
+    var gameTime = document.getElementById("gameTime")
+    var gameMode = document.getElementById("gameMode")
+    var pause = document.getElementById("pause")
+    var startMusic = document.getElementById("startMusic")
+    var dealMusic = document.getElementById("dealMusic")
+    var eatMusic = document.getElementById("eatMusic")
+    var gameSetting = {
+        width:20, // 蛇身初始长度
+        speed:null, // 移动速度,值越小移动越快
+        player:"",  //当前玩家名字
+        initLength:3, //蛇身的初始长度
+        score:0, //游戏分数
+        isGameStart:false,
+        time:0
+      }
+    // 生成一节身体
+    function addBody(point){
+      // 创建一节身体
+      var snakeBody = document.createElement("div");
+      // 设置className
+      snakeBody.className = "snakeBody"
+      // 插入到游戏界面
+      game.appendChild(snakeBody)
+      // 新的身体插入到数组
+      snake.push(snakeBody)
+      // 动态设置坐标位置
+      snakeBody.style.left = point.x + "px"
+      snakeBody.style.top = point.y + "px"
+    }
+    // 初始化一条蛇
+    function createSnake(){
+      snake = []
+      for(var n = 0;n<gameSetting.initLength;n++){
+        addBody({x:n*20,y:0})
+      }
+    }
+    // 移动蛇
+    function moveSnake(){
+      // 新蛇头应该在的位置
+      LEFT = parseInt(snake[snake.length-1].style.left)
+      TOP = parseInt(snake[snake.length-1].style.top)
+      //修正数组的对应关系
+      //把当前的蛇尾插入到蛇头前面一份副本
+      snake.push(snake[0])
+      //修正样式
+      snake.shift()
+      if(dir == "right"){
+        snake[snake.length - 1].style.left = LEFT + gameSetting.width + "px"
+        snake[snake.length - 1].style.top = TOP + "px"
+      }
+      if(dir == "bottom"){
+        snake[snake.length - 1].style.left = LEFT + "px"
+        snake[snake.length - 1].style.top = TOP + gameSetting.width + "px"
+      }
+      if(dir == "left"){
+        snake[snake.length - 1].style.left = LEFT - gameSetting.width + "px"
+        snake[snake.length - 1].style.top = TOP + "px"
+      }
+      if(dir == "top"){
+        snake[snake.length - 1].style.left = LEFT + "px"
+        snake[snake.length - 1].style.top = TOP - gameSetting.width + "px"
+      }
+      // 得分碰撞检测
+      headX = parseInt(snake[snake.length - 1].style.left)
+      headY = parseInt(snake[snake.length - 1].style.top)
+      if(headX == point.x && headY == point.y){
+        eatMusic.play()
+        Producefood()
+        addBody({x:headX,y:headY})
+        updataScore()   
+      }
+      if(gameSetting.player == ""){
+        PCgamer()
+      }
+      // 碰撞边缘检测
+      if(headX < 0 || headX > 500 - gameSetting.width || headY < 0 || headY > 500 - gameSetting.width){
+        // 死亡逻辑
+        if(dir == "right"){
+          snake[snake.length-1].style.left = parseInt(snake[0].style.left) - gameSetting.width+"px"
+        }  
+        if(dir == "bottom"){
+          snake[snake.length-1].style.top = parseInt(snake[0].style.top) - gameSetting.width+"px"
+        }
+        if(dir == "left"){
+          snake[snake.length-1].style.left = parseInt(snake[0].style.left) + gameSetting.width+"px"
+        }
+        if(dir == "top"){
+          snake[snake.length-1].style.top = parseInt(snake[0].style.top) + gameSetting.width+"px"
+        }
+        dead()
+      }
+      // 碰撞自身检测
+      // 枚举除蛇头和它前面一个的坐标
+      for(var i=0;i<snake.length-2;i++){
+        // 判断蛇头是否与任意一节蛇身坐标相等
+        if(parseInt(snake[i].style.left) == headdX && parseInt(snake[i].style.top)==headY){
+          dead()
+        }
+      }
+    }
+    function dead(){
+      startMusic.pause()
+      dealMusic.play()
+      clearInterval(autoMove)
+      clearInterval(gameTimeList)
+      mark.style.color = "#f00"
+      over.style.display = "block"
+    }
+    // 根据键盘按下的键改变蛇头朝向
+    window.onkeydown = function(event){
+      if(event.keyCode == 40 && dir !== "top" ){
+        dir = "bottom"
+      }  
+      if(event.keyCode == 39 && dir !== "left"){
+        dir = "right"
+      }
+      if(event.keyCode == 37 && dir !== "right"){
+        dir = "left"
+      }
+      if(event.keyCode == 38 && dir !== "bottom"){
+        dir = "top"
+      }
+      if(event.keyCode == 13){
+        autoMove = setInterval(function(){
+          initGame()
+        },speed)
+      }
+    }
+    // 生成一个随机食物
+    function Producefood(){
+      if(game.getElementsByTagName("span").length){
+        // 清除已经存在的食物
+        game.removeChild(game.getElementsByTagName("span")[0])
+      }
+      //生成并插入食物节点
+      food = document.createElement("span")
+      game.appendChild(food)
+      Coordinatefood()
+    }
+    function Coordinatefood(){
+      // 食物坐标
+      point = {x:0,y:0}
+      //生成随机坐标值
+      point.x = Math.floor(Math.random()*(500-gameSetting.width)/gameSetting.width)*gameSetting.width
+      point.y = Math.floor(Math.random()*(500-gameSetting.width)/gameSetting.width)*gameSetting.width
+      //为节点样式赋值随机坐标值
+      food.style.left = point.x + "px"
+      food.style.top = point.y + "px"
+      for(var i = 0;i<snake.length;i++){
+        var x = parseInt(snake[i].style.left)
+        var y = parseInt(snake[i].style.top)
+        if(point.x == x && point.y == y){
+          Coordinatefood()
+        }
+      }
+    }
+    // 得分颜色的自动变换
+    function animation(){
+      var color = document.getElementById("color")
+      function getColor(){
+        var result = "#"
+        var arr = [0,1,2,3,4,5,6,7,8,9,"A","B","C","D","E","F"]
+        for(var i=0;i<6;i++){
+          var newColor = Math.floor(Math.random() * 16)
+          result += arr[newColor]
+        }
+        return result 
+      }
+      color.style.color = getColor()
+    }
+    setInterval(function(){
+      animation()
+    },300)
+    // 电脑模式
+    function PCgamer(){
+      if(headX !== point.x){
+        if(headX < point.x){
+          if(dir == "left"){
+            dir = "bottom"
+          }
+          else{
+            dir = "right"
+          }
+        }
+        if(headX > point.x){
+          if(dir == "right"){
+            dir = "bottom"
+          }
+          else{
+            dir = "left"
+          }
+        }
+      }
+      if(headX == point.x && headY !== point.y){
+        if(headY < point.y){
+          if(dir == "top"){
+            dir = "left"
+          }
+          else{
+            dir = "bottom"
+          }
+        }
+        if(headY > point.y){
+          if(dir == "bttom"){
+            dir = "left"
+          }
+          else{
+            dir = "top"
+          }
+        }
+      }
+    }
+    function updataTime(){
+      gameTimeList = setInterval(function(){
+        gameSetting.time += 1;
+        gameTime.innerHTML = gameSetting.time
+      },1000)
+    }
+    function initGame(){
+      // 初始化蛇头默认方向
+      dir = "right" // 蛇的移动方向,默认向右移动
+      // 清除已有移动计时器
+      if(gameSetting.isGameStart){
+        clearInterval(autoMove)
+        gameSetting.isGameStart = false;
+      }
+      // 重置游戏时间
+      gameTime.innerHTML = 0;
+      gameSetting.time = 0;
+      game.style.border = "1px solid #e3e3e3"
+      //初始化游戏信息
+      gameSetting.player = player.value
+      gameSetting.speed = gameMode.value;
+      //清空页面中存在的蛇和食物
+      game.innerHTML = ""
+      //初始化分数
+      gameSetting.score = 0;
+      mark.innerHTML = 0;
+      // Game over 消失
+      over.style.display = "none"
+      //初始化一条蛇
+      createSnake()
+      //初始化食物
+      Producefood()
+      // 蛇自动移动功能
+      autoMove = setInterval(function(){
+        moveSnake()
+      },gameSetting.speed)
+      gameSetting.isGameStart = true;
+
+      //记录本次游戏时间
+      updataTime();
+    }
+    // 开始游戏单击事件
+    btn.onclick = function(){
+      startMusic.play()
+      initGame()
+    }
+    pause.onclick = function(){
+      startMusic.pause()
+      clearInterval(autoMove)
+      clearInterval(gameTimeList)
+      goOn.style.display = "block"
+    }
+    goOn.onclick = function(){
+      autoMove = setInterval(function(){
+        moveSnake()
+        startMusic.play()
+      },gameSetting.speed)
+      updataTime()
+      goOn.style.display = "none"
+    }
+    function updataScore(){
+      //添加class以触发向上渐隐效果
+      mark.className = "fade"
+      //计时0.3秒
+      setTimeout(function(){
+        //更新对象记录分数
+        gameSetting.score += 10;
+        // 更改分数颜色
+        mark.style.color = "#0f0"
+        //更新视图分数
+        mark.innerHTML = gameSetting.score;
+        //移除class以触发向下渐显效果
+        mark.className = ""
+      },300)
+    }
+	</script>
+</body>
+</html>
